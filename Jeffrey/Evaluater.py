@@ -35,8 +35,10 @@ def jeff_eval_weight(dataset,weights_score):
     # Get the length of the question
     j = i
     question_size = 0
-    while j < len(dataset) and dataset[j][2] == dataset[start][2]:
+    while j < len(dataset) and dataset[j][1] == dataset[start][1]:
       j = j + 1
+      if j == 85:
+        pass
     answers = []
     while i < j:
       question_size = question_size + 1
@@ -49,7 +51,7 @@ def jeff_eval_weight(dataset,weights_score):
     for k in range(0,len(sorted_weights)):
       row_id,score = sorted_weights[k]
       if row_id in answers:
-        weight_score += k
+        weight_score += k - start
         
   return weight_score
       
