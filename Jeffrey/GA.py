@@ -4,12 +4,11 @@ Created on Oct 20, 2013
 @author: Carterj3
 '''
 weight_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\jeff_weights'
-
+# 239944
 dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
 #dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain-1q.csv'
 
-from multiprocessing import Queue
-from threading import Thread
+from multiprocessing  import Process, Queue, Array
 from random import random,uniform
 from Evaluater import jeff_eval_row,jeff_eval_weight
 from types import BooleanType
@@ -34,6 +33,7 @@ def get_dataset():
       if (i %1000) == 0:
         print "Dataset",i,clock()-t1
         t1 = clock()
+  
   return dataset
 
 def get_weights():
@@ -86,7 +86,7 @@ def runHelper_jeff_eval_weight(each_weight,each_score,dataset,weight_queue):
     ls.append(temp_weight)
     weight_queue.put(ls)
 
-def run(dataset,count=10,mutate=.10,diviance=.25,):
+def run(dataset,count=2,mutate=.10,diviance=.25,):
   
   # Load the weights
   w = get_weights()
@@ -113,15 +113,15 @@ def run(dataset,count=10,mutate=.10,diviance=.25,):
     start_times = []
     end_times = []
     total_time = 0
-    threads = []
+    proccesses = []
     for j in range(0,len(dataset)):
-      T = Thread(target=runHelper_jeff_eval_row,args=(dataset, j, wc, temp_weights_score,clock()))
+      P = Process(target=runHelper_jeff_eval_row,args=(dataset, j, wc, temp_weights_score,clock()))
       start_times.append(clock())
-      T.start()
-      threads.append(T)
+      P.start()
+      proccesses.append(P)
       
     for j in range(0,len(dataset)):
-      threads[j].join()
+      proccesses[j].join()
       end_times.append(clock())
       total_time = total_time + end_times[j] - start_times[j]
       
@@ -143,18 +143,20 @@ def run(dataset,count=10,mutate=.10,diviance=.25,):
   start_times = []
   end_times = []
   total_time = 0
-  threads = []
+  proccesses = []
   
   #
   for k in range(0,len(all_weights)):
+    print "W_Threads starting ",k,
     each_weight, each_score = all_weights[k]
-    T = Thread(target=runHelper_jeff_eval_weight,args=(each_weight, each_score, dataset, weight_queue))
-    T.start()
-    threads.append(T)
+    P = Process(target=runHelper_jeff_eval_weight,args=(each_weight, each_score, dataset, weight_queue))
+    P.start()
+    print " started"
+    proccesses.append(P)
     start_times.append(clock())
       
   for k in range(0,len(all_weights)):
-    threads[k].join()
+    proccesses[k].join()
     end_times.append(clock())
     total_time = total_time + end_times[k] - start_times[k]
 
@@ -168,8 +170,6 @@ def run(dataset,count=10,mutate=.10,diviance=.25,):
       max_rating = temp_rating
       max_weight = temp_weight
     
-      
-  
   # Store best weight
   
   store_weights(max_weight,max_rating)
