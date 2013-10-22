@@ -5,8 +5,15 @@ Created on Oct 20, 2013
 '''
 weight_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\jeff_weights'
 
-dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
-#dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain-1q.csv'
+#dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
+dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain-1q.csv'
+
+from multiprocessing import Process, Queue
+from random import random,uniform
+from Evaluater import jeff_eval_row,jeff_eval_weight
+from types import BooleanType
+from time import clock
+
 def get_dataset():
   # Store weights in the same file
   dataset =  [];
@@ -57,18 +64,27 @@ def store_weights(weights,rating):
   
   with open(weight_file,'a') as f:
     f.write(tempstring.getvalue())
+
+def runHelper_jeff_eval_row(dataset,rowIndex,weights,queue):
+  if type(dataset[rowIndex][len(dataset[rowIndex])-1]) is BooleanType:
+      row = dataset[rowIndex][2:(len(dataset[rowIndex])-2)]
+  else:
+    row = dataset[rowIndex][2:]
+ 
+  # Cannot return, store data in given queue
+  ls = []
+  ls.append(rowIndex+1)
+  ls.append(jeff_eval_row(row,weights))
+  queue.put(ls)
+  pass
     
-def run(count=10,mutate=.10,diviance=.25):
-  from random import random,uniform
-  from Evaluater import jeff_eval_row,jeff_eval_weight
-  from types import BooleanType
-  from time import clock
+def run(dataset,count=10,mutate=.10,diviance=.25,):
+  
   # Load the weights
   w = get_weights()
-  dataset = get_dataset()
   
   # (weights, weights_score)
-  all_weights = []
+  temp_all_weights = Queue()
   
   for i in range(0,count):
     wc = []
@@ -85,25 +101,27 @@ def run(count=10,mutate=.10,diviance=.25):
       wc.append(value)
     
     # Run the weight
-    weights_score = []
+    temp_weights_score = Queue()
     t1 = clock()
     for j in range(0,len(dataset)):
-      if type(dataset[j][len(dataset[j])-1]) is BooleanType:
-        row = dataset[j][2:(len(dataset[j])-2)]
-      else:
-        row = dataset[j][2:]
+      runHelper_jeff_eval_row(dataset, j, wc, temp_weights_score)
       if (j % 1000) == 0:
         print "Scoring",j,clock()-t1
         t1 = clock()
-      weights_score.append((j+1,jeff_eval_row(row,wc)))
     
-    all_weights.append((wc,weights_score))
+    weights_score = []
+    while not temp_weights_score.empty():
+      weights_score.append(temp_weights_score.get())
+    temp_all_weights.put((wc,weights_score))
     wc = None
     
   max_rating,max_weight = 0,[]
-  
+    
   # Find best weight
-  
+  all_weights = []
+  while not temp_all_weights.empty():
+    all_weights.append(temp_all_weights.get())
+    
   t1 = clock()
   for k in range(0,len(all_weights)):
     each_weight,each_scores = all_weights[k]
@@ -120,5 +138,7 @@ def run(count=10,mutate=.10,diviance=.25):
   
   
 if __name__ == '__main__':
+  data = get_dataset()
   while True:
-    run()
+    run(data)
+    break
