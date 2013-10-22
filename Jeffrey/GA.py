@@ -77,7 +77,15 @@ def runHelper_jeff_eval_row(dataset,rowIndex,weights,queue,t1):
   ls.append(rowIndex+1)
   ls.append(jeff_eval_row(row,weights))
   queue.put(ls)
+
+def runHelper_jeff_eval_weight(each_weight,each_score,dataset,weight_queue):
+    temp_rating, temp_weight = jeff_eval_weight(dataset,each_score),each_weight
     
+    ls = []
+    ls.append(temp_rating)
+    ls.append(temp_weight)
+    weight_queue.put(ls)
+
 def run(dataset,count=10,mutate=.10,diviance=.25,):
   
   # Load the weights
@@ -136,15 +144,8 @@ def run(dataset,count=10,mutate=.10,diviance=.25,):
   t1 = clock()
   weight_queue = Queue()
   for k in range(0,len(all_weights)):
-    each_weight,each_scores = all_weights[k]
-    temp_rating, temp_weight = jeff_eval_weight(dataset,each_scores),each_weight
-    
-    ls = []
-    ls.append(temp_rating)
-    ls.append(temp_weight)
-    weight_queue.put(ls)
-    print "Weights",k,clock()-t1
-    t1 = clock()
+    each_weight, each_score = all_weights[k]
+    runHelper_jeff_eval_weight(each_weight, each_score, dataset, weight_queue)
     
   max_rating, max_weight = 0,[]
   while not weight_queue.empty():
