@@ -5,10 +5,11 @@ Created on Oct 20, 2013
 '''
 weight_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\jeff_weights'
 
-dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
-#dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain-1q.csv'
+#dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
+dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain-1q.csv'
 
-from multiprocessing import Process, Queue
+from multiprocessing import Queue
+from threading import Thread
 from random import random,uniform
 from Evaluater import jeff_eval_row,jeff_eval_weight
 from types import BooleanType
@@ -65,7 +66,7 @@ def store_weights(weights,rating):
   with open(weight_file,'a') as f:
     f.write(tempstring.getvalue())
 
-def runHelper_jeff_eval_row(dataset,rowIndex,weights,queue):
+def runHelper_jeff_eval_row(dataset,rowIndex,weights,queue,t1):
   if type(dataset[rowIndex][len(dataset[rowIndex])-1]) is BooleanType:
       row = dataset[rowIndex][2:(len(dataset[rowIndex])-2)]
   else:
@@ -101,18 +102,23 @@ def run(dataset,count=10,mutate=.10,diviance=.25,):
     
     # Run the weight
     temp_weights_score = Queue()
-    t1 = clock()
-    processes = []
+    start_times = []
+    end_times = []
+    total_time = 0
+    threads = []
     for j in range(0,len(dataset)):
-      P = Process(target=runHelper_jeff_eval_row,args=(dataset, j, wc, temp_weights_score))
-      P.start()
-      processes.append(P)
+      T = Thread(target=runHelper_jeff_eval_row,args=(dataset, j, wc, temp_weights_score,clock()))
+      T.start()
+      threads.append(T)
+      start_times.append(clock())
       
     for j in range(0,len(dataset)):
-      processes[j].join()
-      if (j % 1000) == 0:
-        print "Scoring",j,clock()-t1
-        t1 = clock()
+      threads[j].join()
+      end_times.append(clock())
+      total_time = end_times[j] - start_times[j]
+      
+    print "Threads took ", total_time / len(dataset)," seconds (AVG)"
+    print "Threads took ", total_time, " seconds (Total)"
     
     weights_score = []
     while not temp_weights_score.empty():
@@ -126,16 +132,29 @@ def run(dataset,count=10,mutate=.10,diviance=.25,):
   all_weights = []
   while not temp_all_weights.empty():
     all_weights.append(temp_all_weights.get())
-    
+
   t1 = clock()
+  weight_queue = Queue()
   for k in range(0,len(all_weights)):
     each_weight,each_scores = all_weights[k]
     temp_rating, temp_weight = jeff_eval_weight(dataset,each_scores),each_weight
+    
+    ls = []
+    ls.append(temp_rating)
+    ls.append(temp_weight)
+    weight_queue.put(ls)
+    print "Weights",k,clock()-t1
+    t1 = clock()
+    
+  max_rating, max_weight = 0,[]
+  while not weight_queue.empty():
+    temp_rating,temp_weight = weight_queue.get()
     if temp_rating > max_rating:
       max_rating = temp_rating
       max_weight = temp_weight
-    print "Weights",k,clock()-t1
-    t1 = clock()
+    
+      
+  
   # Store best weight
   
   store_weights(max_weight,max_rating)
