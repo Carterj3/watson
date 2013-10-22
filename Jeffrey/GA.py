@@ -125,28 +125,42 @@ def run(dataset,count=10,mutate=.10,diviance=.25,):
       end_times.append(clock())
       total_time = end_times[j] - start_times[j]
       
-    print "Threads took ", total_time / len(dataset)," seconds (AVG)"
-    print "Threads took ", total_time, " seconds (Total)"
+    print "S_Threads took ", total_time / len(dataset)," seconds (AVG)"
+    print "S_Threads took ", total_time, " seconds (Total)"
     
     weights_score = []
     while not temp_weights_score.empty():
       weights_score.append(temp_weights_score.get())
     temp_all_weights.put((wc,weights_score))
     wc = None
-    
-  max_rating,max_weight = 0,[]
-    
+        
   # Find best weight
   all_weights = []
   while not temp_all_weights.empty():
     all_weights.append(temp_all_weights.get())
 
-  t1 = clock()
   weight_queue = Queue()
+  start_times = []
+  end_times = []
+  total_time = 0
+  threads = []
+  
+  #
   for k in range(0,len(all_weights)):
     each_weight, each_score = all_weights[k]
-    runHelper_jeff_eval_weight(each_weight, each_score, dataset, weight_queue)
-    
+    T = Thread(target=runHelper_jeff_eval_weight,args=(each_weight, each_score, dataset, weight_queue))
+    T.start()
+    threads.append(T)
+    start_times.append(clock())
+      
+  for k in range(0,len(all_weights)):
+    threads[k].join()
+    end_times.append(clock())
+    total_time = end_times[k] - start_times[k]
+
+  print "W_Threads took ", total_time / len(dataset)," seconds (AVG)"
+  print "W_Threads took ", total_time, " seconds (Total)" 
+  #
   max_rating, max_weight = 0,[]
   while not weight_queue.empty():
     temp_rating,temp_weight = weight_queue.get()
