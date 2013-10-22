@@ -5,8 +5,8 @@ Created on Oct 20, 2013
 '''
 weight_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\jeff_weights'
 
-#dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
-dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain-1q.csv'
+dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
+#dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain-1q.csv'
 
 from multiprocessing import Queue
 from threading import Thread
@@ -116,14 +116,14 @@ def run(dataset,count=10,mutate=.10,diviance=.25,):
     threads = []
     for j in range(0,len(dataset)):
       T = Thread(target=runHelper_jeff_eval_row,args=(dataset, j, wc, temp_weights_score,clock()))
+      start_times.append(clock())
       T.start()
       threads.append(T)
-      start_times.append(clock())
       
     for j in range(0,len(dataset)):
       threads[j].join()
       end_times.append(clock())
-      total_time = end_times[j] - start_times[j]
+      total_time = total_time + end_times[j] - start_times[j]
       
     print "S_Threads took ", total_time / len(dataset)," seconds (AVG)"
     print "S_Threads took ", total_time, " seconds (Total)"
@@ -156,7 +156,7 @@ def run(dataset,count=10,mutate=.10,diviance=.25,):
   for k in range(0,len(all_weights)):
     threads[k].join()
     end_times.append(clock())
-    total_time = end_times[k] - start_times[k]
+    total_time = total_time + end_times[k] - start_times[k]
 
   print "W_Threads took ", total_time / len(dataset)," seconds (AVG)"
   print "W_Threads took ", total_time, " seconds (Total)" 
@@ -179,5 +179,7 @@ def run(dataset,count=10,mutate=.10,diviance=.25,):
 if __name__ == '__main__':
   data = get_dataset()
   while True:
+    t1 = clock()
     run(data)
+    print "Cycle took ",clock()-t1," seconds to complete"
     break
