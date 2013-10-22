@@ -5,8 +5,8 @@ Created on Oct 20, 2013
 '''
 weight_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\jeff_weights'
 
-#dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
-dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain-1q.csv'
+dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
+#dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain-1q.csv'
 
 from multiprocessing import Process, Queue
 from random import random,uniform
@@ -76,7 +76,6 @@ def runHelper_jeff_eval_row(dataset,rowIndex,weights,queue):
   ls.append(rowIndex+1)
   ls.append(jeff_eval_row(row,weights))
   queue.put(ls)
-  pass
     
 def run(dataset,count=10,mutate=.10,diviance=.25,):
   
@@ -103,8 +102,14 @@ def run(dataset,count=10,mutate=.10,diviance=.25,):
     # Run the weight
     temp_weights_score = Queue()
     t1 = clock()
+    processes = []
     for j in range(0,len(dataset)):
-      runHelper_jeff_eval_row(dataset, j, wc, temp_weights_score)
+      P = Process(target=runHelper_jeff_eval_row,args=(dataset, j, wc, temp_weights_score))
+      P.start()
+      processes.append(P)
+      
+    for j in range(0,len(dataset)):
+      processes[j].join()
       if (j % 1000) == 0:
         print "Scoring",j,clock()-t1
         t1 = clock()
