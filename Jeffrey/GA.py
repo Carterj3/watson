@@ -33,7 +33,8 @@ def get_weights():
   weights =  None;
   with open(weight_file,'r') as f:
     for line in f:
-          weights = line.strip('\n').split(',')
+      temp_line = line.split(":")[1]
+      weights = temp_line.strip('\n').split(',')
   temp = []
   for each in weights:
     try:
@@ -44,12 +45,18 @@ def get_weights():
       pass
   return temp
   
-def store_weights(weights):
+def store_weights(weights,rating):
+  from cStringIO import StringIO
+  tempstring = StringIO()
+  tempstring.write(str(rating)+":")
+  
+  for l in range(0,len(weights)-1):
+    value = str(weights[l])
+    tempstring.write(value+",")
+  tempstring.write(str(weights[len(weights)-1])+"\n")
+  
   with open(weight_file,'a') as f:
-    for value in weights:
-      f.write(str(value))
-      f.write(',')
-    f.write('\n')
+    f.write(tempstring.getvalue())
     
 def run(count=10,mutate=.10,diviance=.25):
   from random import random,uniform
@@ -72,6 +79,8 @@ def run(count=10,mutate=.10,diviance=.25):
       # Mutate the weight
       if (random() < mutate):
         d = value * diviance
+        if d == 0:
+          d = 1
         value = value + uniform(-d,d)
       wc.append(value)
     
@@ -106,13 +115,10 @@ def run(count=10,mutate=.10,diviance=.25):
     t1 = clock()
   # Store best weight
   
-  store_weights(max_weight)
+  store_weights(max_weight,max_rating)
   print "Storing weight with a value of",max_rating
   
   
 if __name__ == '__main__':
-  var = "1"
-  while var == "1":
+  while True:
     run()
-    var = raw_input("Enter 1 to continue: ")
-  print "Good bye ..."
