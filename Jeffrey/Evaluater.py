@@ -59,7 +59,7 @@ def jeff_eval_weight(dataset,weights_score):
     for k in range(0,len(sorted_weights)):
       row_id,score = sorted_weights[k]
       if row_id in answers:
-        weight_score += k - start
+        weight_score += (k - start) ** 3
         
   return weight_score
 

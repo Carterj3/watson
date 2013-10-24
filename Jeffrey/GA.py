@@ -45,11 +45,11 @@ def get_dataset(d_file=dataset_file):
         t1 = clock()
   return dataset
 
-def get_weights():
+def get_weights(fil=weight_file):
   # Store weights in the same file
   weights =  None;
   score = 0
-  with open(weight_file,'r') as f:
+  with open(fil,'r') as f:
     for line in f:
       temp = line.split(":")
       score = float(temp[0])
@@ -65,7 +65,7 @@ def get_weights():
       pass
   return score,temp
   
-def store_weights(weights,rating):
+def store_weights(weights,rating,fil=weight_file):
   from cStringIO import StringIO
   tempstring = StringIO()
   tempstring.write(str(rating)+":")
@@ -75,7 +75,7 @@ def store_weights(weights,rating):
     tempstring.write(value+",")
   tempstring.write(str(weights[len(weights)-1])+"\n")
   
-  with open(weight_file,'a') as f:
+  with open(fil,'a') as f:
     f.write(tempstring.getvalue())
 
 
@@ -114,10 +114,10 @@ def runHelper_jeff_eval_weight(each_weight,each_score,dataset,weight_queue):
     ls.append(temp_weight)
     weight_queue.put(ls)
 
-def Train_run(dataset,count=100,mutate=.10,diviance=.30):
+def Train_run(dataset,tFile,count=100,mutate=.10,diviance=.30):
   t1 = clock()
   # Load the weights
-  score,w = get_weights()
+  score,w = get_weights(tFile)
   
   # (weights, weights_score)
   temp_all_weights = Queue()
@@ -200,7 +200,7 @@ def Train_run(dataset,count=100,mutate=.10,diviance=.30):
   
   # Store best weight fi it was better than the old one
   if score < max_rating:
-    store_weights(max_weight,max_rating)
+    store_weights(max_weight,max_rating,tFile)
   print "Storing weight with a value of",max_rating,"took",clock()-t1,"seconds"
   
 def Eval_run():
@@ -227,12 +227,20 @@ def Eval_run():
   
     
 if __name__ == '__main__':
+  import sys
+  args = sys.argv
+  
+  if len(args) < 2:
+    tFile = weight_file
+  else:
+    tFile = args[1]
+  
   if train:
     data = get_dataset()
     while True:
-      Train_run(data)
+      Train_run(data,tFile)
   else:
     #Eval_run()
     from Evaluater import jeff_save_n_qid
     data = get_dataset()
-    jeff_save_n_qid(data,200)
+    jeff_save_n_qid(data,300)
