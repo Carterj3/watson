@@ -7,7 +7,11 @@ Created on Oct 20, 2013
 train = True
 
 weight_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\jeff_weights'
+# 239944
+dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
+#dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain-1q.csv'
 
+<<<<<<< HEAD
 eval_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmcevaluation.csv'
 
 #dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
@@ -17,6 +21,9 @@ dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmc_200.csv'
 
 from multiprocessing import Queue
 from threading import Thread
+=======
+from multiprocessing  import Process, Queue, Array
+>>>>>>> master
 from random import random,uniform
 from Evaluater import jeff_eval_row,jeff_eval_weight,jeff_create_question_array,jeff_eval_qid
 from types import BooleanType
@@ -43,6 +50,7 @@ def get_dataset(d_file=dataset_file):
       if (i %1000) == 0:
         print "Dataset",i,clock()-t1
         t1 = clock()
+  
   return dataset
 
 def get_weights(fil=weight_file):
@@ -114,8 +122,13 @@ def runHelper_jeff_eval_weight(each_weight,each_score,dataset,weight_queue):
     ls.append(temp_weight)
     weight_queue.put(ls)
 
+<<<<<<< HEAD
 def Train_run(dataset,tFile,count=100,mutate=.10,diviance=.30):
   t1 = clock()
+=======
+def run(dataset,count=2,mutate=.10,diviance=.25,):
+  
+>>>>>>> master
   # Load the weights
   score,w = get_weights(tFile)
   
@@ -141,15 +154,15 @@ def Train_run(dataset,tFile,count=100,mutate=.10,diviance=.30):
     start_times = []
     end_times = []
     total_time = 0
-    threads = []
+    proccesses = []
     for j in range(0,len(dataset)):
-      T = Thread(target=runHelper_jeff_eval_row,args=(dataset, j, wc, temp_weights_score,clock()))
-      T.start()
-      threads.append(T)
+      P = Process(target=runHelper_jeff_eval_row,args=(dataset, j, wc, temp_weights_score,clock()))
       start_times.append(clock())
+      P.start()
+      proccesses.append(P)
       
     for j in range(0,len(dataset)):
-      threads[j].join()
+      proccesses[j].join()
       end_times.append(clock())
       total_time = total_time + end_times[j] - start_times[j]
       
@@ -171,20 +184,26 @@ def Train_run(dataset,tFile,count=100,mutate=.10,diviance=.30):
   start_times = []
   end_times = []
   total_time = 0
-  threads = []
+  proccesses = []
   
   #
   for k in range(0,len(all_weights)):
+    print "W_Threads starting ",k,
     each_weight, each_score = all_weights[k]
-    T = Thread(target=runHelper_jeff_eval_weight,args=(each_weight, each_score, dataset, weight_queue))
-    T.start()
-    threads.append(T)
+    P = Process(target=runHelper_jeff_eval_weight,args=(each_weight, each_score, dataset, weight_queue))
+    P.start()
+    print " started"
+    proccesses.append(P)
     start_times.append(clock())
       
   for k in range(0,len(all_weights)):
-    threads[k].join()
+    proccesses[k].join()
     end_times.append(clock())
+<<<<<<< HEAD
     total_time =  total_time + end_times[k] - start_times[k]
+=======
+    total_time = total_time + end_times[k] - start_times[k]
+>>>>>>> master
 
   print "W_Threads took ", total_time / len(dataset)," seconds (AVG)"
   print "W_Threads took ", total_time, " seconds (Total)" 
@@ -196,6 +215,7 @@ def Train_run(dataset,tFile,count=100,mutate=.10,diviance=.30):
       max_rating = temp_rating
       max_weight = temp_weight
     
+<<<<<<< HEAD
       
   
   # Store best weight fi it was better than the old one
@@ -209,6 +229,9 @@ def Eval_run():
   score,w = get_weights()
   
   eval = get_dataset(eval_file)
+=======
+  # Store best weight
+>>>>>>> master
   
   eval_qids = jeff_create_question_array(eval)
   
@@ -227,6 +250,7 @@ def Eval_run():
   
     
 if __name__ == '__main__':
+<<<<<<< HEAD
   import sys
   args = sys.argv
   
@@ -244,3 +268,11 @@ if __name__ == '__main__':
     from Evaluater import jeff_save_n_qid
     data = get_dataset()
     jeff_save_n_qid(data,300)
+=======
+  data = get_dataset()
+  while True:
+    t1 = clock()
+    run(data)
+    print "Cycle took ",clock()-t1," seconds to complete"
+    break
+>>>>>>> master

@@ -7,4 +7,11 @@
 
 *.csv
 
+<<<<<<< HEAD
 cmd.exe.lnk
+=======
+*.suo
+bin
+obj
+*.user
+>>>>>>> master
