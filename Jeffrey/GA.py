@@ -6,9 +6,9 @@ Created on Oct 20, 2013
 
 train = True
 
-weight_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\jeff_weights'
+weight_file = 'C:\Users\Carterj3\workspace\ai\AI-Watson\Jeffrey\Weights\jeff_weights_4'
 # 239944
-eval_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmcevaluation.csv'
+eval_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\Datasets\\tgmcevaluation.csv'
 
 #dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmctrain.csv'
 dataset_file = 'C:\\Users\\Carterj3\\workspace\\ai\\AI-Watson\\tgmc_200.csv'
@@ -92,6 +92,7 @@ def store_answers(answers):
   with open("answers.txt",'w') as f:
     temp = tempstring.getvalue()
     f.write(temp)
+    print f
 
 
 
@@ -143,15 +144,15 @@ def Train_run(dataset,tFile,count=100,mutate=.10,diviance=.30):
     start_times = []
     end_times = []
     total_time = 0
-    proccesses = []
+    threads = []
     for j in range(0,len(dataset)):
-      P = Process(target=runHelper_jeff_eval_row,args=(dataset, j, wc, temp_weights_score,clock()))
+      T = Thread(target=runHelper_jeff_eval_row,args=(dataset, j, wc, temp_weights_score,clock()))
       start_times.append(clock())
-      P.start()
-      proccesses.append(P)
+      T.start()
+      threads.append(T)
       
     for j in range(0,len(dataset)):
-      proccesses[j].join()
+      threads[j].join()
       end_times.append(clock())
       total_time = total_time + end_times[j] - start_times[j]
       
@@ -173,20 +174,20 @@ def Train_run(dataset,tFile,count=100,mutate=.10,diviance=.30):
   start_times = []
   end_times = []
   total_time = 0
-  proccesses = []
+  threads = []
   
   #
   for k in range(0,len(all_weights)):
     print "W_Threads starting ",k,
     each_weight, each_score = all_weights[k]
-    P = Process(target=runHelper_jeff_eval_weight,args=(each_weight, each_score, dataset, weight_queue))
-    P.start()
+    T = Thread(target=runHelper_jeff_eval_weight,args=(each_weight, each_score, dataset, weight_queue))
+    T.start()
     print " started"
-    proccesses.append(P)
+    threads.append(T)
     start_times.append(clock())
       
   for k in range(0,len(all_weights)):
-    proccesses[k].join()
+    threads[k].join()
     end_times.append(clock())
 
     total_time =  total_time + end_times[k] - start_times[k]
@@ -208,13 +209,38 @@ def Train_run(dataset,tFile,count=100,mutate=.10,diviance=.30):
   if score < max_rating:
     store_weights(max_weight,max_rating,tFile)
   print "Storing weight with a value of",max_rating,"took",clock()-t1,"seconds"
-  
-def Eval_run():
+
+
+def get_top_p(weights_f,eval_f,p=0.80):
   t1 = clock()
   # Load the weights
-  score,w = get_weights()
+  score,w = get_weights(weights_f)
+  eval = get_dataset(eval_f)
+  eval_qids = jeff_create_question_array(eval)
   
-  eval = get_dataset(eval_file)
+  answers = []
+  
+  t1 = clock()
+  for i in range(0,len(eval_qids)):
+    qid = eval_qids[i]
+    temp = jeff_eval_qid(qid,w)
+    sorted_temp = sorted(temp,key=lambda x: x[1])
+    
+    for j in range(int(p*len(sorted_temp)),len(sorted_temp)):
+      answers.append(sorted_temp[j][0])
+      
+    if (i % 1) == 0:
+      print "qids",i+1,"/",len(eval_qids),"|",clock()-t1,"seconds"
+      t1 = clock()
+    
+  store_answers(answers)
+
+def Eval_run(weights_f,eval_f):
+  t1 = clock()
+  # Load the weights
+  score,w = get_weights(weights_f)
+  
+  eval = get_dataset(eval_f)
 
   
   eval_qids = jeff_create_question_array(eval)
@@ -237,18 +263,34 @@ if __name__ == '__main__':
   import sys
   args = sys.argv
   
+  print len(args),args
+  
   if len(args) < 2:
     tFile = weight_file
-  else:
+    dFile = dataset_file
+  elif len(args) < 3:
     tFile = args[1]
+    dFile = dataset_file
+  elif len(args) < 4:
+    tFile = args[1]
+    dFile = args[2]
   
+  get_top_p(tFile,dFile,0.95)
+  
+  '''
   if train:
-    data = get_dataset()
+    data = get_dataset(dFile)
     while True:
       Train_run(data,tFile)
   else:
-    #Eval_run()
+    # Gives an answer
+    #Eval_run(tFile,dFile)
+    
+    # Gives a file containing n questions
     from Evaluater import jeff_save_n_qid
-    data = get_dataset()
-    jeff_save_n_qid(data,300)
+    data = get_dataset(tFile)
+    n = 1000
+    jeff_save_n_qid(data,n)
+  '''
+    
 
